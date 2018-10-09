@@ -1,4 +1,4 @@
-//Управление обогревом, Абашин Дмитрий.
+#include <GyverEncoder.h>
 #include <Arduino.h>
 #include <U8x8lib.h>
 #include <Wire.h>
@@ -11,10 +11,12 @@
 #define TEMP_INSIDE 3
 #define TEMP_OUTSIDE 2
 #define SETPOINT_PIN 0
-#define SCREEN_BUTTON_PIN 4
+#define UP_PIN 4
+#define DOWN_PIN 5
 #define HEATER_PIN 12
-#define HEARTBIT_PIN 13
-#define OLED_RESET 4
+#define CLK 9
+#define DT 10
+#define SW 11
 
 U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
 DS3231 rtc(SDA, SCL);
@@ -22,6 +24,7 @@ OneWire tempInside(TEMP_INSIDE);
 DallasTemperature sensorInside(&tempInside);
 OneWire tempOutside(TEMP_OUTSIDE);
 DallasTemperature sensorOutside(&tempOutside);
+Encoder enc1(CLK, DT, SW);
 
 /////// Переменные для запроса температуры.
 //Температура с датчика DS18B20.
@@ -39,27 +42,22 @@ String currentTime;
 //Предыдущее время считывания даты и времени.
 unsigned long previousTimeDataTimeRead;
 
-/////// Переменные для управления обогревателем.
-//Уставка температуры в вольтах.
-float setPointRaw;
 //Уставка температуры в градусах Цельсия.
-float setPointCelsius;
+float manualModeSetPoint = 20;
 //Состояние обогревателя, true - включен.
 bool heaterStatus = true;
 
-///////Переменные для переключения экрана.
-//Нажата ли кнопка переключения экранов.
-bool screenButtonWasUp = true;
+///////Переменные для переключения режимов.
 //Номер экрана
-int screenNumber = 1;
+int modeNumber = 1;
 //Количество экранов всего.
-const int totalScreenNumber = 5;
+const int totalModeNumber = 5;
+
 //Предыдущее время обновления экрана.
 unsigned long previousTimeScreenRefresh;
 
-///////Переменные для пульса.
-//Предыдущее время пульса.
-unsigned long previousTimeHeartbit;
+//Предыдущее время отправки данных.
+unsigned long previousTimeSendDataToSerial;
 
 //Время цикла loop.
 int loopCycleTime;
@@ -93,12 +91,15 @@ void setup()
   previousTimeTemperatureRead = 0;
   previousTimeTemperatureRequest = 0;
   pinMode(HEATER_PIN, OUTPUT);
-  pinMode(SCREEN_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(UP_PIN, INPUT_PULLUP);
 
   //OLED setup
   u8x8.begin();
   u8x8.setPowerSave(0);
   u8x8.setFont(u8x8_font_victoriabold8_r);
+
+  //Encoder setup.
+  enc1.setType(TYPE2);
   
   //Интервал, через который ватчдог сбросит МК, если таймер ватчдога не обнулится.
   wdt_enable (WDTO_2S);
@@ -107,15 +108,22 @@ void setup()
 
 void loop()
 {   
+    //Опрос энкодера.
+    enc1.tick();
+    
     int loopCycleBegin = millis();
     
-    getTemperatures(60000);
+    requestTemperature(60000);
 
-    readTime(800);
+    getTemperature(62000);
 
+    getDateTime(1000);
+
+    manageSetPointInManualMode();
+    
     heaterManage();
       
-    printScreen1(1300);
+    printScreen1(400);
     
     modeSwitching();
 
@@ -124,102 +132,4 @@ void loop()
     wdt_reset();
     
     loopCycleTime = millis() - loopCycleBegin;
-}
-
-void getTemperatures(int waitInterval)
-{
-  if ((millis() - previousTimeTemperatureRequest) >= waitInterval)
-  {
-    sensorInside.requestTemperatures();
-    sensorOutside.requestTemperatures();
-    previousTimeTemperatureRequest = millis();
-    delay(100);
-    temperatureInside = sensorInside.getTempCByIndex(0);
-    temperatureOutside = sensorOutside.getTempCByIndex(0);
-    previousTimeTemperatureRead = millis();
-  }
-}
-
-void readTime(int waitTime)
-{
-  if ((millis() - previousTimeDataTimeRead) >= waitTime)
-    {       
-      currentDate = rtc.getDateStr(FORMAT_SHORT);
-      currentTime = rtc.getTimeStr();
-      previousTimeDataTimeRead = millis();
-    }
-}
-
-void printScreen1(int waitTime)
-{
-  if ((millis() - previousTimeScreenRefresh) >= waitTime)
-  {
-    u8x8.setCursor(0,0);
-    u8x8.print(currentDate);
-    u8x8.setCursor(0,1);
-    u8x8.print(currentTime);
-    u8x8.setCursor(0,2);
-    u8x8.print("TempIn: " + String(temperatureInside));
-    u8x8.setCursor(0,3);
-    u8x8.print("TempOut: " + String(temperatureOutside));
-    u8x8.setCursor(0,4);
-    u8x8.print("SetPoint: " + String(setPointCelsius));
-    u8x8.setCursor(0,5);
-    u8x8.print("LoopTime: " + String(loopCycleTime));
-    previousTimeScreenRefresh = millis();
-  }
-}
-
-void heaterManage()
-{
-    setPointRaw = analogRead(SETPOINT_PIN);
-    setPointCelsius = map(setPointRaw, 0, 1023, 0, 270);
-    setPointCelsius = setPointCelsius/10;
-    if (setPointCelsius >= temperatureInside) 
-    {
-      digitalWrite(HEATER_PIN, HIGH);
-      heaterStatus = true;
-    }    
-    else
-    {
-      digitalWrite(HEATER_PIN, LOW);
-      heaterStatus = false;
-    }
-}
-
-void modeSwitching()
-{
-  if (screenButtonWasUp && !digitalRead(SCREEN_BUTTON_PIN)) 
-    {
-      delay(10);
-      if (!digitalRead(SCREEN_BUTTON_PIN))
-      {
-        if(screenNumber < totalScreenNumber)
-          {screenNumber ++;}
-        else
-          {screenNumber = 1;}
-      }
-    }
-    screenButtonWasUp = digitalRead(SCREEN_BUTTON_PIN);
-}
-
-void sendDataToSerial(int waitTime)
-{
-  if((millis() - previousTimeHeartbit) >= waitTime)
-  {   
-    StaticJsonBuffer<450> jsonBuffer;
-    JsonObject& root = jsonBuffer.createObject();
-    root["tempIn"] = temperatureInside;
-    root["tempOut"] = temperatureOutside;
-    root["time"] = currentTime;
-    root["date"] = currentDate;
-    root["setPoint"] = setPointCelsius;
-    root["heatSt"] = heaterStatus;
-    root["screen"] = screenNumber;
-    root.printTo(Serial);
-    Serial.println();
-    jsonBuffer.clear();
-
-    previousTimeHeartbit = millis();
-  }
 }
