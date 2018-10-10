@@ -113,9 +113,9 @@ void loop()
     
     int loopCycleBegin = millis();
     
-    requestTemperature(60000);
+    requestTemperature(30000);
 
-    getTemperature(62000);
+    getTemperature(31000);
 
     getDateTime(1000);
 
