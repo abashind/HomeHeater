@@ -81,7 +81,6 @@ void manageSetPointInManualMode()
 
 void sendDataToSerial(int waitTime)
 {
-  
   if((millis() - previousTimeSendDataToSerial) >= waitTime)
   {   
     StaticJsonBuffer<450> jsonBuffer;
@@ -90,13 +89,24 @@ void sendDataToSerial(int waitTime)
     root["tempOut"] = temperatureOutside;
     root["time"] = currentTime;
     root["date"] = currentDate;
-    root["setPoint"] = manualModeSetPoint;
+    root["manSetPoint"] = manualModeSetPoint;
     root["heatSt"] = heaterStatus;
     root["modeNumber"] = modeNumber;
-    jsonBuffer.clear();
     root.printTo(Serial);
-    jsonBuffer.clear();
     
     previousTimeSendDataToSerial = millis();
+  }
+}
+
+void receiveJsonDataFromSerial()
+{
+  if (Serial.available())
+  {
+    StaticJsonBuffer<450> jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(Serial);
+    manualModeSetPoint = root["manSetPoint"];
+    daySetPoint = root["daySetPoint"];
+    nightSetPoint = root["nightSetPoint"];
+    modeNumber = root["modeNumber"];
   }
 }

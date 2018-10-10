@@ -43,7 +43,9 @@ String currentTime;
 unsigned long previousTimeDataTimeRead;
 
 //Уставка температуры в градусах Цельсия.
-float manualModeSetPoint = 20;
+float manualModeSetPoint = 21;
+float daySetPoint = 19;
+float nightSetPoint = 23;
 //Состояние обогревателя, true - включен.
 bool heaterStatus = true;
 
@@ -128,6 +130,10 @@ void loop()
     modeSwitching();
 
 	  sendDataToSerial(500);
+
+    delay(20);
+    
+    receiveJsonDataFromSerial();
     
     wdt_reset();
     
