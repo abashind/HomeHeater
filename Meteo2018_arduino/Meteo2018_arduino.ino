@@ -8,15 +8,17 @@
 #include <avr/wdt.h>
 #include <ArduinoJson.h>
 
-#define TEMP_INSIDE 3
 #define TEMP_OUTSIDE 2
-#define SETPOINT_PIN 0
+#define TEMP_INSIDE 3
 #define UP_PIN 4
 #define DOWN_PIN 5
-#define HEATER_PIN 12
+#define TEMP_WATER 6
 #define CLK 9
 #define DT 10
 #define SW 11
+#define HEATER_PIN 12
+
+#define SETPOINT_PIN 0
 
 U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
 DS3231 rtc(SDA, SCL);
@@ -24,12 +26,15 @@ OneWire tempInside(TEMP_INSIDE);
 DallasTemperature sensorInside(&tempInside);
 OneWire tempOutside(TEMP_OUTSIDE);
 DallasTemperature sensorOutside(&tempOutside);
+OneWire tempWater(TEMP_WATER);
+DallasTemperature sensorWater(&tempWater);
 Encoder enc1(CLK, DT, SW);
 
 /////// Переменные для запроса температуры.
 //Температура с датчика DS18B20.
 float temperatureInside;
 float temperatureOutside;
+float temperatureWater;
 //Предыдущее время запроса температуры.
 unsigned long previousTimeTemperatureRequest;
 //Предыдущее время чтения температуры.
@@ -64,16 +69,19 @@ unsigned long previousTimeSendDataToSerial;
 //Время цикла loop.
 int loopCycleTime;
 
+//Данные отправлены, пока не сбросится в flase ждём данных от ESP.
+bool dataIsSended = false;
+
 void setup()
 {
   //Выключаем ватчдог после перезагрузки.
   wdt_disable();
   
   //Подождать запуска Wemos.
-  delay(3000);
+  delay(1000);
 
   //Uart setup.
-  Serial.begin(9600);
+  Serial.begin(115200);
   
   //Time setup.                                       
   rtc.begin();
@@ -86,10 +94,13 @@ void setup()
   //Temperature setup.
   sensorInside.begin();
   sensorOutside.begin();
+  sensorWater.begin();
   sensorInside.requestTemperatures();
   sensorOutside.requestTemperatures();
+  sensorWater.requestTemperatures();
   temperatureInside = sensorInside.getTempCByIndex(0);
   temperatureOutside = sensorOutside.getTempCByIndex(0);
+  temperatureWater = sensorWater.getTempCByIndex(0);
   previousTimeTemperatureRead = 0;
   previousTimeTemperatureRequest = 0;
   pinMode(HEATER_PIN, OUTPUT);
@@ -129,11 +140,9 @@ void loop()
     
     modeSwitching();
 
-	  sendDataToSerial(500);
-
-    delay(20);
-    
-    receiveJsonDataFromSerial();
+	  sendDataToSerial(1000);
+   
+    receiveDataFromSerial();
     
     wdt_reset();
     

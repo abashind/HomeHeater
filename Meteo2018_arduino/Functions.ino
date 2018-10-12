@@ -4,6 +4,7 @@ void requestTemperature(int waitInterval)
   {
     sensorInside.requestTemperatures();
     sensorOutside.requestTemperatures();
+    sensorWater.requestTemperatures();
     previousTimeTemperatureRequest = millis();
   }
 }
@@ -14,6 +15,7 @@ void getTemperature(int waitInterval)
   {
     temperatureInside = sensorInside.getTempCByIndex(0);
     temperatureOutside = sensorOutside.getTempCByIndex(0);
+    temperatureWater = sensorWater.getTempCByIndex(0);
     previousTimeTemperatureRead = millis();
   }
 }
@@ -75,38 +77,45 @@ void modeSwitching()
 
 void manageSetPointInManualMode()
 {
-  if (enc1.isRight()) manualModeSetPoint += 0.2;
-  if (enc1.isLeft()) manualModeSetPoint -= 0.2;
+  if (enc1.isRight()) manualModeSetPoint += 0.5;
+  if (enc1.isLeft()) manualModeSetPoint -= 0.5;
 }
 
 void sendDataToSerial(int waitTime)
 {
   if((millis() - previousTimeSendDataToSerial) >= waitTime)
   {   
-    StaticJsonBuffer<450> jsonBuffer;
+    StaticJsonBuffer<650> jsonBuffer;
     JsonObject& root = jsonBuffer.createObject();
     root["tempIn"] = temperatureInside;
     root["tempOut"] = temperatureOutside;
+    root["tempW"] = temperatureWater;
     root["time"] = currentTime;
     root["date"] = currentDate;
     root["manSetPoint"] = manualModeSetPoint;
     root["heatSt"] = heaterStatus;
+    root["daySetPoint"] = daySetPoint;
+    root["nightSetPoint"] = nightSetPoint;
     root["modeNumber"] = modeNumber;
     root.printTo(Serial);
-    
+    Serial.println();
     previousTimeSendDataToSerial = millis();
   }
 }
 
-void receiveJsonDataFromSerial()
+void receiveDataFromSerial()
 {
-  if (Serial.available())
+  if(Serial.available() > 0 )
   {
-    StaticJsonBuffer<450> jsonBuffer;
+    StaticJsonBuffer<400> jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(Serial);
-    manualModeSetPoint = root["manSetPoint"];
-    daySetPoint = root["daySetPoint"];
-    nightSetPoint = root["nightSetPoint"];
-    modeNumber = root["modeNumber"];
+    if(root["manSetPoint"] != 0)
+    {manualModeSetPoint = root["manSetPoint"];}
+    if(root["modeNumber"] != 0) 
+    {modeNumber = root["modeNumber"];}
+    if(root["daySetPoint"] != 0)
+    {daySetPoint = root["daySetPoint"];}
+    if(root["nightSetPoint"] != 0)
+    {nightSetPoint = root["nightSetPoint"];}
   }
 }

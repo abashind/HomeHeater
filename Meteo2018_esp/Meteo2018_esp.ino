@@ -4,6 +4,7 @@
 
 float temperatureInside;
 float temperatureOutside;
+float temperatureWater;
 const char* currentTime;
 const char* currentDate;
 float manualModeSetPoint;
@@ -11,6 +12,7 @@ float nightSetPoint;
 float daySetPoint;
 bool heaterStatus;
 int modeNumber;
+int loopCycleTime;
 
 char auth[] = "64eb1e89df674887b797183a7d3150a5";
 char ssid[] = "7SkyHome";
@@ -20,37 +22,57 @@ BlynkTimer timer;
 BLYNK_WRITE(V0)
 {
   manualModeSetPoint = param.asFloat();
+  StaticJsonBuffer<400> jsonBuffer; 
+  JsonObject& root = jsonBuffer.createObject();
+  root["manSetPoint"] = manualModeSetPoint;
+  root.printTo(Serial);
+  Serial.println();
 }
 
 BLYNK_WRITE(V5)
 {
   modeNumber = param.asInt();
+  StaticJsonBuffer<400> jsonBuffer; 
+  JsonObject& root = jsonBuffer.createObject();
+  root["modeNumber"] = modeNumber;
+  root.printTo(Serial);
+  Serial.println();
 }
 
 BLYNK_WRITE(V6)
 {
   daySetPoint = param.asFloat();
+  StaticJsonBuffer<400> jsonBuffer; 
+  JsonObject& root = jsonBuffer.createObject();
+  root["daySetPoint"] = daySetPoint;
+  root.printTo(Serial);
+  Serial.println();
 }
 
 BLYNK_WRITE(V7)
 {
   nightSetPoint = param.asFloat();
+  StaticJsonBuffer<400> jsonBuffer; 
+  JsonObject& root = jsonBuffer.createObject();
+  root["nightSetPoint"] = nightSetPoint;
+  root.printTo(Serial);
+  Serial.println();
 }
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Blynk.begin(auth, ssid, pass);
   timer.setInterval(1000L, sendDataToBlynkServer);
-  timer.setInterval(500L, sendJsonDataToSerial);
 }
 
 void loop()
 {
-  receiveJsonDataFromSerial();
-  sendJsonDataToSerial();
+  int loopCycleBegin = millis();
+  receiveJsonDataBySerial();
   Blynk.run();
   timer.run();
+  loopCycleTime = millis() - loopCycleBegin;
 }
 
 void sendDataToBlynkServer()
@@ -63,16 +85,20 @@ void sendDataToBlynkServer()
   Blynk.virtualWrite(V5, modeNumber);
   Blynk.virtualWrite(V6, daySetPoint);
   Blynk.virtualWrite(V7, nightSetPoint);
+  Blynk.virtualWrite(V8, temperatureOutside);
+  Blynk.virtualWrite(V9, temperatureWater);
+  Blynk.virtualWrite(V10, loopCycleTime);
 }
 
-void receiveJsonDataFromSerial()
+void receiveJsonDataBySerial()
 { 
-  if (Serial.available())
+  if (Serial.available() > 0)
   {
-    StaticJsonBuffer<450> jsonBuffer;
+    StaticJsonBuffer<650> jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(Serial);
     temperatureInside = root["tempIn"];
     temperatureOutside = root["tempOut"];
+    temperatureWater = root["tempW"];
     currentDate = root["date"];
     currentTime = root["time"];
     manualModeSetPoint = root["manSetPoint"]; 
@@ -82,19 +108,3 @@ void receiveJsonDataFromSerial()
     nightSetPoint = root["nightSetPoint"];
   }
 }
-
-void sendJsonDataToSerial()
-{ 
-  if (Serial.available())
-  {
-    StaticJsonBuffer<450> jsonBuffer;
-    JsonObject& root = jsonBuffer.createObject();
-    root["manSetPoint"] = manualModeSetPoint;
-    root["daySetPoint"] = daySetPoint;
-    root["nightSetPoint"] = nightSetPoint;
-    root["modeNumber"] = nightSetPoint;
-    root.printTo(Serial);
-  }
-}
-
-
