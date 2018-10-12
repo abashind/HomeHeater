@@ -5,8 +5,8 @@
 float temperatureInside;
 float temperatureOutside;
 float temperatureWater;
-const char* currentTime;
-const char* currentDate;
+String currentTime;
+String currentDate;
 float manualModeSetPoint;
 float nightSetPoint;
 float daySetPoint;
@@ -99,8 +99,10 @@ void receiveJsonDataBySerial()
     temperatureInside = root["tempIn"];
     temperatureOutside = root["tempOut"];
     temperatureWater = root["tempW"];
-    currentDate = root["date"];
-    currentTime = root["time"];
+    const char* _currentDate = root["date"];
+    const char* _currentTime = root["time"];
+    currentDate = String(_currentDate);
+    currentTime = String(_currentTime);
     manualModeSetPoint = root["manSetPoint"]; 
     heaterStatus = root["heatSt"];
     modeNumber = root["modeNumber"];
