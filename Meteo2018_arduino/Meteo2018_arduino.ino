@@ -17,7 +17,6 @@
 #define DT 10
 #define SW 11
 #define HEATER_PIN 12
-
 #define SETPOINT_PIN 0
 
 U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
@@ -44,6 +43,7 @@ unsigned long previousTimeTemperatureRead;
 //Время и дата.
 String currentDate;
 String currentTime;
+Time t;
 //Предыдущее время считывания даты и времени.
 unsigned long previousTimeDataTimeRead;
 
@@ -55,10 +55,10 @@ float nightSetPoint = 23;
 bool heaterStatus = true;
 
 ///////Переменные для переключения режимов.
-//Номер экрана
+//Номер режима.
 int modeNumber = 1;
-//Количество экранов всего.
-const int totalModeNumber = 5;
+//Количество режимов всего.
+const int totalModeNumber = 3;
 
 //Предыдущее время обновления экрана.
 unsigned long previousTimeScreenRefresh;

@@ -26,6 +26,7 @@ void getDateTime(int waitTime)
     {       
       currentDate = rtc.getDateStr(FORMAT_SHORT);
       currentTime = rtc.getTimeStr();
+      t = rtc.getTime();
       previousTimeDataTimeRead = millis();
     }
 }
@@ -34,34 +35,109 @@ void printScreen1(int waitTime)
 {
   if ((millis() - previousTimeScreenRefresh) >= waitTime)
   {
+    const char* tIn;
+    const char* tOut;
+    const char* tW;
+    const char* mSP;
+    const char* dSP;
+    const char* nSP;
+    dtostrf(temperatureInside,6,1,tIn);
+    dtostrf(temperatureOutside,6,1,tOut);
+    dtostrf(temperatureWater,6,1,tW);
+    dtostrf(manualModeSetPoint,6,1,mSP);
+    dtostrf(daySetPoint,6,1,dSP);
+    dtostrf(nightSetPoint,6,1,nSP);
+    
     u8x8.setCursor(0,0);
-    u8x8.print(currentDate);
-    u8x8.setCursor(0,1);
     u8x8.print(currentTime);
+    u8x8.setCursor(10,0);
+    u8x8.print("mode:" + String(modeNumber));
+    
+    u8x8.setCursor(0,1);
+    u8x8.print("tI:" + String(tIn));
+    u8x8.setCursor(8,1);
+    u8x8.print("tO:" + String(tOut));
+    
     u8x8.setCursor(0,2);
-    u8x8.print("TempIn: " + String(temperatureInside));
+    u8x8.print("tW: " + String(tW));
+    u8x8.setCursor(8,2);
+    u8x8.print("mT: " + String(mSP));
+
     u8x8.setCursor(0,3);
-    u8x8.print("TempOut: " + String(temperatureOutside));
+    u8x8.print("dT: " + String(dSP));
+    u8x8.setCursor(8,3);
+    u8x8.print("nT: " + String(nSP));
+    
     u8x8.setCursor(0,4);
-    u8x8.print("SetPoint: " + String(manualModeSetPoint));
-    u8x8.setCursor(0,5);
-    u8x8.print("LoopTime: " + String(loopCycleTime));
+    u8x8.print("lT: " + String(loopCycleTime));
     previousTimeScreenRefresh = millis();
   }
 }
 
 void heaterManage()
 {
-    if (manualModeSetPoint >= temperatureInside) 
+  switch (modeNumber)
+  {
+    //Ручной режим.
+    case 1:
     {
-      digitalWrite(HEATER_PIN, HIGH);
-      heaterStatus = true;
-    }    
-    else
-    {
-      digitalWrite(HEATER_PIN, LOW);
-      heaterStatus = false;
+      if (manualModeSetPoint >= temperatureInside) 
+        {
+          digitalWrite(HEATER_PIN, HIGH);
+          heaterStatus = true;
+        }    
+      else
+        {
+          digitalWrite(HEATER_PIN, LOW);
+          heaterStatus = false;
+        }
+      break;
     }
+
+    //Режим день/ночь.
+    case 2:
+    {
+      //День. 
+      if (t.hour >= 9 && t.hour <= 20 )
+      {
+        if (daySetPoint >= temperatureInside) 
+        {
+          digitalWrite(HEATER_PIN, HIGH);
+          heaterStatus = true;
+        }
+        else
+        {
+          digitalWrite(HEATER_PIN, LOW);
+          heaterStatus = false;
+        }
+      }
+      
+      //Ночь.
+      else
+      {
+        if (nightSetPoint >= temperatureInside) 
+        {
+          digitalWrite(HEATER_PIN, HIGH);
+          heaterStatus = true;
+        }
+        else
+        {
+          digitalWrite(HEATER_PIN, LOW);
+          heaterStatus = false;
+        }
+      }
+    }
+
+    //Автоматика отключена.
+    case 3:
+    {
+      if(heaterStatus)
+        digitalWrite(HEATER_PIN, HIGH);
+      else
+        digitalWrite(HEATER_PIN, LOW);
+      break;
+    }
+  }
 }
 
 void modeSwitching()
