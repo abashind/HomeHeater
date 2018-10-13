@@ -31,7 +31,7 @@ void getDateTime(int waitTime)
     }
 }
 
-void printScreen1(int waitTime)
+void printScreen(int waitTime)
 {
   if ((millis() - previousTimeScreenRefresh) >= waitTime)
   {
@@ -61,13 +61,38 @@ void printScreen1(int waitTime)
     u8x8.setCursor(0,2);
     u8x8.print("tW: " + String(tW));
     u8x8.setCursor(8,2);
-    u8x8.print("mT: " + String(mSP));
-
+    if(editableSetPoint == 1)
+    {
+      u8x8.setFont(u8x8_font_artosserif8_r);
+      u8x8.print("mT: " + String(mSP));
+      u8x8.setFont(u8x8_font_victoriabold8_r);
+    }
+    else
+    {
+      u8x8.print("mT: " + String(mSP));
+    }
     u8x8.setCursor(0,3);
-    u8x8.print("dT: " + String(dSP));
+    if(editableSetPoint == 2)
+    {
+      u8x8.setFont(u8x8_font_artosserif8_r);
+      u8x8.print("dT: " + String(dSP));
+      u8x8.setFont(u8x8_font_victoriabold8_r);
+    }
+    else
+    {
+      u8x8.print("dT: " + String(dSP));
+    }
     u8x8.setCursor(8,3);
-    u8x8.print("nT: " + String(nSP));
-    
+    if(editableSetPoint == 3)
+    {
+      u8x8.setFont(u8x8_font_artosserif8_r);
+      u8x8.print("nT: " + String(nSP));
+      u8x8.setFont(u8x8_font_victoriabold8_r);
+    }
+    else
+    {
+      u8x8.print("nT: " + String(nSP));
+    }
     u8x8.setCursor(0,4);
     u8x8.print("lT: " + String(loopCycleTime));
     previousTimeScreenRefresh = millis();
@@ -143,18 +168,39 @@ void heaterManage()
 void modeSwitching()
 {
   if (enc1.isRelease())
-      {
-        if(modeNumber < totalModeNumber)
-          {modeNumber ++;}
-        else
-          {modeNumber = 1;}
-      }
+    {
+      if(modeNumber < totalModeNumber)
+        {modeNumber ++;}
+      else
+        {modeNumber = 1;}
+    }
 }
 
-void manageSetPointInManualMode()
+void manageSetPoints()
 {
-  if (enc1.isRight()) manualModeSetPoint += 0.5;
-  if (enc1.isLeft()) manualModeSetPoint -= 0.5;
+  switch(editableSetPoint)
+  {
+    case 1:
+    {
+      if (enc1.isRight()) manualModeSetPoint += 0.5;
+      if (enc1.isLeft()) manualModeSetPoint -= 0.5;
+      break;
+    }
+    
+    case 2:
+    {
+      if (enc1.isRight()) daySetPoint += 0.5;
+      if (enc1.isLeft()) daySetPoint -= 0.5;
+      break;
+    }
+    
+    case 3:
+    {
+      if (enc1.isRight()) nightSetPoint += 0.5;
+      if (enc1.isLeft()) nightSetPoint -= 0.5;
+      break;
+    }
+  }
 }
 
 void sendDataToSerial(int waitTime)
@@ -194,4 +240,16 @@ void receiveDataFromSerial()
     if(root["nightSetPoint"] != 0)
     {nightSetPoint = root["nightSetPoint"];}
   }
+}
+
+void editableSetPointPrev()
+{
+  if(editableSetPoint > 1)
+    editableSetPoint--;
+}
+
+void editableSetPointNext()
+{
+  if(editableSetPoint < 3)
+    editableSetPoint++;
 }

@@ -7,6 +7,7 @@
 #include <DallasTemperature.h>
 #include <avr/wdt.h>
 #include <ArduinoJson.h>
+#include "OneButton.h"
 
 #define TEMP_OUTSIDE 2
 #define TEMP_INSIDE 3
@@ -28,6 +29,8 @@ DallasTemperature sensorOutside(&tempOutside);
 OneWire tempWater(TEMP_WATER);
 DallasTemperature sensorWater(&tempWater);
 Encoder enc1(CLK, DT, SW);
+OneButton upButton(UP_PIN, true);
+OneButton downButton(DOWN_PIN, true);
 
 /////// Переменные для запроса температуры.
 //Температура с датчика DS18B20.
@@ -69,8 +72,10 @@ unsigned long previousTimeSendDataToSerial;
 //Время цикла loop.
 int loopCycleTime;
 
-//Данные отправлены, пока не сбросится в flase ждём данных от ESP.
-bool dataIsSended = false;
+// Редактируемая уставка.
+int editableSetPoint = 1;
+// Количество уставок.
+int setPointCount = 3;
 
 void setup()
 {
@@ -113,38 +118,45 @@ void setup()
 
   //Encoder setup.
   enc1.setType(TYPE2);
+
+  //Buttons setup.
+  upButton.attachClick(editableSetPointPrev);
+  downButton.attachClick(editableSetPointNext);
   
   //Интервал, через который ватчдог сбросит МК, если таймер ватчдога не обнулится.
   wdt_enable (WDTO_2S);
-
 }
 
 void loop()
 {   
-    //Опрос энкодера.
-    enc1.tick();
-    
-    int loopCycleBegin = millis();
-    
-    requestTemperature(30000);
+  int loopCycleBegin = millis();
 
-    getTemperature(31000);
+  //Опрос энкодера.
+  enc1.tick();
 
-    getDateTime(1000);
+  //Опрос кнопок навигации по меню.
+  upButton.tick();
+  downButton.tick();
+  
+  requestTemperature(30000);
 
-    manageSetPointInManualMode();
-    
-    heaterManage();
-      
-    printScreen1(400);
-    
-    modeSwitching();
+  getTemperature(31000);
 
-	  sendDataToSerial(1000);
-   
-    receiveDataFromSerial();
+  getDateTime(1000);
+  
+  heaterManage();
     
-    wdt_reset();
-    
-    loopCycleTime = millis() - loopCycleBegin;
+  printScreen(400);
+  
+  modeSwitching();
+
+  manageSetPoints();
+
+  sendDataToSerial(1000);
+ 
+  receiveDataFromSerial();
+  
+  wdt_reset();
+  
+  loopCycleTime = millis() - loopCycleBegin;
 }
