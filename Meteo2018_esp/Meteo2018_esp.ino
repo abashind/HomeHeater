@@ -29,6 +29,16 @@ BLYNK_WRITE(V0)
   Serial.println();
 }
 
+BLYNK_WRITE(V2)
+{
+  heaterStatus = param.asInt();
+  StaticJsonBuffer<400> jsonBuffer; 
+  JsonObject& root = jsonBuffer.createObject();
+  root["heatSt"] = heaterStatus;
+  root.printTo(Serial);
+  Serial.println();
+}
+
 BLYNK_WRITE(V5)
 {
   modeNumber = param.asInt();

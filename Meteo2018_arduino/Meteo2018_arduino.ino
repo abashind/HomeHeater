@@ -110,6 +110,7 @@ void setup()
   previousTimeTemperatureRequest = 0;
   pinMode(HEATER_PIN, OUTPUT);
   pinMode(UP_PIN, INPUT_PULLUP);
+  pinMode(DOWN_PIN, INPUT_PULLUP);
 
   //OLED setup
   u8x8.begin();
