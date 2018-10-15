@@ -51,15 +51,19 @@ Time t;
 unsigned long previousTimeDataTimeRead;
 
 //Уставка температуры в градусах Цельсия.
-float manualModeSetPoint = 21;
-float daySetPoint = 19;
-float nightSetPoint = 23;
+float manualModeSetPoint = 21;               //            ---------------------- toEEPROM
+float daySetPoint = 19;                     //      ---------------------- toEEPROM
+float nightSetPoint = 23;                   //        ---------------------- toEEPROM
 //Состояние обогревателя, true - включен.
 bool heaterStatus = true;
+bool needWarm;
+bool needCool; 
+float deadZoneValue = 0.4;                     //      ---------------------- toEEPROM
+float oneSideDeadZoneValue = deadZoneValue/2;
 
 ///////Переменные для переключения режимов.
 //Номер режима.
-int modeNumber = 1;
+int modeNumber = 1;                          // ---------------------- toEEPROM
 //Количество режимов всего.
 const int totalModeNumber = 3;
 

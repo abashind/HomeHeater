@@ -94,16 +94,7 @@ void heaterManage()
     //Ручной режим.
     case 1:
     {
-      if (manualModeSetPoint >= (int)temperatureInside) 
-        {
-          digitalWrite(HEATER_PIN, HIGH);
-          heaterStatus = true;
-        }    
-      else
-        {
-          digitalWrite(HEATER_PIN, LOW);
-          heaterStatus = false;
-        }
+      warmCool(manualModeSetPoint);    
       break;
     }
 
@@ -112,33 +103,10 @@ void heaterManage()
     {
       //День. 
       if (t.hour >= 9 && t.hour <= 20 )
-      {
-        if (daySetPoint >= (int)temperatureInside) 
-        {
-          digitalWrite(HEATER_PIN, HIGH);
-          heaterStatus = true;
-        }
-        else
-        {
-          digitalWrite(HEATER_PIN, LOW);
-          heaterStatus = false;
-        }
-      }
-      
+        warmCool(daySetPoint);      
       //Ночь.
       else
-      {
-        if (nightSetPoint >= (int)temperatureInside) 
-        {
-          digitalWrite(HEATER_PIN, HIGH);
-          heaterStatus = true;
-        }
-        else
-        {
-          digitalWrite(HEATER_PIN, LOW);
-          heaterStatus = false;
-        }
-      }
+        warmCool(nightSetPoint);
       break;
     }
 
@@ -244,3 +212,37 @@ void editableSetPointNext()
   if(editableSetPoint < 3)
     editableSetPoint++;
 }
+
+void warmCool(float setPoint)
+{
+  //Если холодно, включить котёл.
+  if(temperatureInside < setPoint - oneSideDeadZoneValue)
+    {
+      needWarm = true;
+      needCool = false;
+    }
+    
+  while(needWarm)
+  {
+    digitalWrite(HEATER_PIN, HIGH);
+    heaterStatus = true;
+    if(temperatureInside > setPoint)
+    {
+      needWarm = false;
+      digitalWrite(HEATER_PIN, LOW);
+      heaterStatus = false;
+    }    
+  }
+
+  //Если жарко, ВЫключить котёл.
+  if(temperatureInside > setPoint + oneSideDeadZoneValue)
+  {
+    needCool = true;
+  }
+  while(needCool)
+  {
+    digitalWrite(HEATER_PIN, LOW);
+    heaterStatus = false;
+  }
+}
+
