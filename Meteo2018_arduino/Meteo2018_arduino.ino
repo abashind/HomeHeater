@@ -19,7 +19,6 @@
 #define DT 10
 #define SW 11
 #define HEATER_PIN 12
-#define SETPOINT_PIN 0
 
 U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
 DS3231 rtc(SDA, SCL);
@@ -92,7 +91,7 @@ int setPointCount = 3;
 //Режим уличного фонаря.
 int outsideLampMode = 1;                           // ---------------------- toEEPROM
 bool outsideLampState;
-int currentOutsideLampInterval;
+unsigned long currentOutsideLampInterval;
 
 void setup()
 {
@@ -126,6 +125,7 @@ void setup()
   previousTimeTemperatureRead = 0;
   previousTimeTemperatureRequest = 0;
   pinMode(HEATER_PIN, OUTPUT);
+  pinMode(OUTSIDE_LAMP_PIN, OUTPUT);
   pinMode(UP_PIN, INPUT_PULLUP);
   pinMode(DOWN_PIN, INPUT_PULLUP);
 
@@ -154,6 +154,7 @@ void loop()
 
   //Опрос кнопок навигации по меню.
   upButton.tick();
+  
   downButton.tick();
   
   requestTemperature(30000);
@@ -164,7 +165,7 @@ void loop()
   
   heaterManage();
 
-  manageOutsideLamp(1000, 100);
+  manageOutsideLamp(1000, 166);
     
   printScreen(400);
   

@@ -52,15 +52,14 @@ void printScreen(int waitTime)
     u8x8.setCursor(8,2);
     if(editableSetPoint == 1)
     {
-    u8x8.setFont(u8x8_font_artosserif8_r);
-    u8x8.print("mT:" + String(manualModeSetPoint).substring(0,5));
-    u8x8.setFont(u8x8_font_victoriabold8_r);
+      u8x8.setFont(u8x8_font_artosserif8_r);
+      u8x8.print("mT:" + String(manualModeSetPoint).substring(0,5));
+      u8x8.setFont(u8x8_font_victoriabold8_r);
     }
     else
     {
       u8x8.print("mT:" + String(manualModeSetPoint).substring(0,5));
-    }
-    
+    }    
     u8x8.setCursor(0,3);
     if(editableSetPoint == 2)
     {
@@ -84,7 +83,9 @@ void printScreen(int waitTime)
       u8x8.print("nT:" + String(nightSetPoint).substring(0,5));
     }
     u8x8.setCursor(0,4);
-    u8x8.print("lT:" + String(loopCycleTime));
+    u8x8.print("lT:" + String(loopCycleTime).substring(0,3));
+    u8x8.setCursor(6,4);
+    u8x8.print("lM:" + String(outsideLampMode));
     previousTimeScreenRefresh = millis();
   }
 }
@@ -178,6 +179,7 @@ void sendDataToSerial(int waitTime)
     root["daySetPoint"] = daySetPoint;
     root["nightSetPoint"] = nightSetPoint;
     root["modeNumber"] = modeNumber;
+    root["outLampMode"] = outsideLampMode;
     root.printTo(Serial);
     Serial.println();
     previousTimeSendDataToSerial = millis();
@@ -200,6 +202,8 @@ void receiveDataFromSerial()
       nightSetPoint = root["nightSetPoint"];
     if(root.containsKey("heatSt"))
       heaterStatus = root["heatSt"];
+    if(root.containsKey("outLampMode"))
+      outsideLampMode = root["outLampMode"];
   }
 }
 
@@ -237,12 +241,13 @@ void manageOutsideLamp(int blynkInterval, int strobeInterval)
     case 3:
     {
       outsideLampBlynk(blynkInterval);
+      break;
     }
+    //Уличный фонарь часто мигает.
     case 4:
     {
       outsideLampBlynk(strobeInterval);
+      break;
     }
   }
 }
-
-

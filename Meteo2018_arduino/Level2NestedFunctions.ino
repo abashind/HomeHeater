@@ -7,7 +7,7 @@ void warmCool(float setPoint)
       needCool = false;
     }
     
-  while(needWarm)
+  if(needWarm)
   {
     digitalWrite(HEATER_PIN, HIGH);
     heaterStatus = true;
@@ -24,7 +24,7 @@ void warmCool(float setPoint)
   {
     needCool = true;
   }
-  while(needCool)
+  if(needCool)
   {
     digitalWrite(HEATER_PIN, LOW);
     heaterStatus = false;

@@ -13,6 +13,7 @@ float daySetPoint;
 bool heaterStatus;
 int modeNumber;
 int loopCycleTime;
+int outsideLampMode;
 
 char auth[] = "64eb1e89df674887b797183a7d3150a5";
 char ssid[] = "7SkyHome";
@@ -69,6 +70,16 @@ BLYNK_WRITE(V7)
   Serial.println();
 }
 
+BLYNK_WRITE(V12)
+{
+  outsideLampMode = param.asInt();
+  StaticJsonBuffer<400> jsonBuffer; 
+  JsonObject& root = jsonBuffer.createObject();
+  root["outLampMode"] = outsideLampMode;
+  root.printTo(Serial);
+  Serial.println();
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -118,5 +129,6 @@ void receiveJsonDataBySerial()
     modeNumber = root["modeNumber"];
     daySetPoint = root["daySetPoint"];
     nightSetPoint = root["nightSetPoint"];
+    outsideLampMode = root["outLampMode"];
   }
 }
