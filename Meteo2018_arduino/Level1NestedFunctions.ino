@@ -14,7 +14,9 @@ void getTemperature(int waitInterval)
   if ((millis() - previousTimeTemperatureRead) >= waitInterval)
   {
     temperatureInside = sensorInside.getTempCByIndex(0);
-    temperatureOutside = sensorOutside.getTempCByIndex(0);
+    float outTemp = sensorOutside.getTempCByIndex(0);
+    if(int(outTemp) != - 127)
+      temperatureOutside = outTemp;
     temperatureWater = sensorWater.getTempCByIndex(0);
     previousTimeTemperatureRead = millis();
   }
@@ -102,7 +104,7 @@ void heaterManage()
     case 2:
     {
       //День. 
-      if (t.hour >= 9 && t.hour <= 20 )
+      if (t.hour >= zoneOneBegin && t.hour <= zoneOneEnd )
         warmCool(daySetPoint);      
       //Ночь.
       else
@@ -213,36 +215,34 @@ void editableSetPointNext()
     editableSetPoint++;
 }
 
-void warmCool(float setPoint)
+void manageOutsideLamp(int blynkInterval, int strobeInterval)
 {
-  //Если холодно, включить котёл.
-  if(temperatureInside < setPoint - oneSideDeadZoneValue)
+  switch(outsideLampMode)
+  {
+    //Уличный фонарь выключен.
+    case 1:
     {
-      needWarm = true;
-      needCool = false;
+      digitalWrite(OUTSIDE_LAMP_PIN, LOW);
+      outsideLampState = false;
+      break;
     }
-    
-  while(needWarm)
-  {
-    digitalWrite(HEATER_PIN, HIGH);
-    heaterStatus = true;
-    if(temperatureInside > setPoint)
+    //Уличный фонарь включен.
+    case 2:
     {
-      needWarm = false;
-      digitalWrite(HEATER_PIN, LOW);
-      heaterStatus = false;
-    }    
-  }
-
-  //Если жарко, ВЫключить котёл.
-  if(temperatureInside > setPoint + oneSideDeadZoneValue)
-  {
-    needCool = true;
-  }
-  while(needCool)
-  {
-    digitalWrite(HEATER_PIN, LOW);
-    heaterStatus = false;
+      digitalWrite(OUTSIDE_LAMP_PIN, HIGH);
+      outsideLampState = true;
+      break;
+    }
+    //Уличный фонарь мигает.
+    case 3:
+    {
+      outsideLampBlynk(blynkInterval);
+    }
+    case 4:
+    {
+      outsideLampBlynk(strobeInterval);
+    }
   }
 }
+
 

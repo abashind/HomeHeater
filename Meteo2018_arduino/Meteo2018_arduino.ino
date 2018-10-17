@@ -14,6 +14,7 @@
 #define UP_PIN 4
 #define DOWN_PIN 5
 #define TEMP_WATER 6
+#define OUTSIDE_LAMP_PIN 7
 #define CLK 9
 #define DT 10
 #define SW 11
@@ -50,18 +51,25 @@ Time t;
 //Предыдущее время считывания даты и времени.
 unsigned long previousTimeDataTimeRead;
 
-//Уставка температуры в градусах Цельсия.
+//Уставки температуры в градусах Цельсия.
 float manualModeSetPoint = 21;               //            ---------------------- toEEPROM
 float daySetPoint = 19;                     //      ---------------------- toEEPROM
 float nightSetPoint = 23;                   //        ---------------------- toEEPROM
 //Состояние обогревателя, true - включен.
 bool heaterStatus = true;
+//Нужно нагреть.
 bool needWarm;
+//Нужно охладить.
 bool needCool; 
+//Начало временной зоны 1.
+int zoneOneBegin = 9;                   //            ---------------------- toEEPROM
+//Конец временной зоны 1.
+int zoneOneEnd = 20;                     //            ---------------------- toEEPROM
+
 float deadZoneValue = 0.4;                     //      ---------------------- toEEPROM
 float oneSideDeadZoneValue = deadZoneValue/2;
 
-///////Переменные для переключения режимов.
+///////Переменные для переключения режимов отопления.
 //Номер режима.
 int modeNumber = 1;                          // ---------------------- toEEPROM
 //Количество режимов всего.
@@ -76,10 +84,15 @@ unsigned long previousTimeSendDataToSerial;
 //Время цикла loop.
 int loopCycleTime;
 
-// Редактируемая уставка.
+// Редактируемая на OLED уставка.
 int editableSetPoint = 1;
 // Количество уставок.
 int setPointCount = 3;
+
+//Режим уличного фонаря.
+int outsideLampMode = 1;                           // ---------------------- toEEPROM
+bool outsideLampState;
+int currentOutsideLampInterval;
 
 void setup()
 {
@@ -150,6 +163,8 @@ void loop()
   getDateTime(1000);
   
   heaterManage();
+
+  manageOutsideLamp(1000, 100);
     
   printScreen(400);
   
