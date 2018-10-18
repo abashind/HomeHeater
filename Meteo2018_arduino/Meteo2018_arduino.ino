@@ -65,7 +65,7 @@ int zoneOneBegin = 9;                   //            ---------------------- toE
 //Конец временной зоны 1.
 int zoneOneEnd = 20;                     //            ---------------------- toEEPROM
 
-float deadZoneValue = 0.4;                     //      ---------------------- toEEPROM
+float deadZoneValue = 0.3;                     //      ---------------------- toEEPROM
 float oneSideDeadZoneValue = deadZoneValue/2;
 
 ///////Переменные для переключения режимов отопления.

@@ -14,10 +14,15 @@ void getTemperature(int waitInterval)
   if ((millis() - previousTimeTemperatureRead) >= waitInterval)
   {
     temperatureInside = sensorInside.getTempCByIndex(0);
+    
     float outTemp = sensorOutside.getTempCByIndex(0);
     if(int(outTemp) != - 127)
       temperatureOutside = outTemp;
-    temperatureWater = sensorWater.getTempCByIndex(0);
+
+    float wTemp = sensorWater.getTempCByIndex(0);
+    if(int(wTemp) != - 127)  
+      temperatureWater = wTemp;
+    
     previousTimeTemperatureRead = millis();
   }
 }

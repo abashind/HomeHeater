@@ -1,17 +1,16 @@
 void warmCool(float setPoint)
 {
   //Если холодно, включить котёл.
-  if(temperatureInside < setPoint - oneSideDeadZoneValue)
+  if(temperatureInside <= setPoint - oneSideDeadZoneValue)
     {
       needWarm = true;
       needCool = false;
-    }
-    
+    }   
   if(needWarm)
   {
     digitalWrite(HEATER_PIN, HIGH);
     heaterStatus = true;
-    if(temperatureInside > setPoint)
+    if(temperatureInside >= setPoint)
     {
       needWarm = false;
       digitalWrite(HEATER_PIN, LOW);
@@ -20,7 +19,7 @@ void warmCool(float setPoint)
   }
 
   //Если жарко, ВЫключить котёл.
-  if(temperatureInside > setPoint + oneSideDeadZoneValue)
+  if(temperatureInside >= setPoint + oneSideDeadZoneValue)
   {
     needCool = true;
   }
