@@ -109,8 +109,9 @@ void heaterManage()
     //Режим день/ночь.
     case 2:
     {
-      //День. 
-      if (t.hour >= zoneOneBegin && t.hour <= zoneOneEnd )
+      //День.
+      int currentHour = t.hour;
+      if (currentHour >= zoneOneBegin && currentHour < zoneOneEnd)
         warmCool(daySetPoint);      
       //Ночь.
       else
