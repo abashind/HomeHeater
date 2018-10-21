@@ -1,33 +1,17 @@
 void warmCool(float setPoint)
 {
-  //Если холодно, включить котёл.
-  if(temperatureInside <= setPoint - oneSideDeadZoneValue)
-    {
-      needWarm = true;
-      needCool = false;
-    }   
-  if(needWarm)
+  //Если холодно и температура воды ниже уставки, включить котёл.
+  if(temperatureInside <= setPoint - insideTempOneSideDeadZone && temperatureWater < waterSetPoint - waterTempOneSideDeadZone)
   {
     digitalWrite(HEATER_PIN, HIGH);
-    heaterStatus = true;
-    if(temperatureInside >= setPoint)
-    {
-      needWarm = false;
-      digitalWrite(HEATER_PIN, LOW);
-      heaterStatus = false;
-    }    
+    heaterStatus = true; 
   }
-
-  //Если жарко, ВЫключить котёл.
-  if(temperatureInside >= setPoint + oneSideDeadZoneValue)
-  {
-    needCool = true;
-  }
-  if(needCool)
+ //Если жарко или температура воды выше уставки, ВЫключить котёл.
+ if(temperatureInside >= setPoint + insideTempOneSideDeadZone || temperatureWater >= waterSetPoint + waterTempOneSideDeadZone)
   {
     digitalWrite(HEATER_PIN, LOW);
     heaterStatus = false;
-  }
+  }   
 }
 
 void outsideLampBlynk(int interval)

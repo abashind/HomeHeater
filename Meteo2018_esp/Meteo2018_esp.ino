@@ -14,10 +14,12 @@ bool heaterStatus;
 int modeNumber;
 int loopCycleTime;
 int outsideLampMode;
+int waterSetPoint;
 
 char auth[] = "64eb1e89df674887b797183a7d3150a5";
 char ssid[] = "7SkyHome";
 char pass[] = "89191532537";
+
 BlynkTimer timer;
 
 BLYNK_WRITE(V0)
@@ -70,6 +72,16 @@ BLYNK_WRITE(V7)
   Serial.println();
 }
 
+BLYNK_WRITE(V10)
+{
+  waterSetPoint = param.asInt();
+  StaticJsonBuffer<400> jsonBuffer; 
+  JsonObject& root = jsonBuffer.createObject();
+  root["waterSetPoint"] = waterSetPoint;
+  root.printTo(Serial);
+  Serial.println();
+}
+
 BLYNK_WRITE(V12)
 {
   outsideLampMode = param.asInt();
@@ -108,7 +120,7 @@ void sendDataToBlynkServer()
   Blynk.virtualWrite(V7, nightSetPoint);
   Blynk.virtualWrite(V8, temperatureOutside);
   Blynk.virtualWrite(V9, temperatureWater);
-  Blynk.virtualWrite(V10, loopCycleTime);
+  Blynk.virtualWrite(V10, waterSetPoint);
 }
 
 void receiveJsonDataBySerial()
@@ -130,5 +142,6 @@ void receiveJsonDataBySerial()
     daySetPoint = root["daySetPoint"];
     nightSetPoint = root["nightSetPoint"];
     outsideLampMode = root["outLampMode"];
+    waterSetPoint = root["waterSetPoint"] ;
   }
 }

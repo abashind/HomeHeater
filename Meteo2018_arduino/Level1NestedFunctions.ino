@@ -186,6 +186,7 @@ void sendDataToSerial(int waitTime)
     root["nightSetPoint"] = nightSetPoint;
     root["modeNumber"] = modeNumber;
     root["outLampMode"] = outsideLampMode;
+    root["waterSetPoint"] = waterSetPoint;
     root.printTo(Serial);
     Serial.println();
     previousTimeSendDataToSerial = millis();
@@ -198,18 +199,20 @@ void receiveDataFromSerial()
   {
     StaticJsonBuffer<400> jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(Serial);
-    if(root["manSetPoint"] != 0)
+    if(root.containsKey("manSetPoint"))
       manualModeSetPoint = root["manSetPoint"];
-    if(root["modeNumber"] != 0) 
+    if(root.containsKey("modeNumber")) 
       modeNumber = root["modeNumber"];
-    if(root["daySetPoint"] != 0)
+    if(root.containsKey("daySetPoint"))
       daySetPoint = root["daySetPoint"];
-    if(root["nightSetPoint"] != 0)
+    if(root.containsKey("nightSetPoint"))
       nightSetPoint = root["nightSetPoint"];
     if(root.containsKey("heatSt"))
       heaterStatus = root["heatSt"];
     if(root.containsKey("outLampMode"))
       outsideLampMode = root["outLampMode"];
+    if(root.containsKey("waterSetPoint"))
+      waterSetPoint = root["waterSetPoint"];
   }
 }
 
@@ -256,4 +259,31 @@ void manageOutsideLamp(int blynkInterval, int strobeInterval)
       break;
     }
   }
+}
+
+void calculateWaterSetPoint()
+{
+  if(modeNumber == 1) return;
+  if(temperatureOutside > -20)
+    waterSetPoint = 60;
+  if(temperatureOutside <= -20 && temperatureOutside > -25)
+    waterSetPoint = 65;
+  if(temperatureOutside <= -25 && temperatureOutside > -30)
+    waterSetPoint = 70;
+  if(temperatureOutside <= -30)
+    waterSetPoint = 85;
+}
+
+void putValuesToEeprom()
+{
+  EEPROM.put(address, manualModeSetPoint); 
+  address += sizeof(float);
+  EEPROM.put(address, daySetPoint);
+  address += sizeof(float);
+  EEPROM.put(address, nightSetPoint);
+  address += sizeof(float);
+  EEPROM.put(address, modeNumber);
+  address += sizeof(int);
+  EEPROM.put(address, outsideLampMode);
+  address = 0;
 }

@@ -8,6 +8,7 @@
 #include <avr/wdt.h>
 #include <ArduinoJson.h>
 #include "OneButton.h"
+#include <EEPROM.h>
 
 #define TEMP_OUTSIDE 2
 #define TEMP_INSIDE 3
@@ -51,26 +52,25 @@ Time t;
 unsigned long previousTimeDataTimeRead;
 
 //Уставки температуры в градусах Цельсия.
-float manualModeSetPoint = 21;               //            ---------------------- toEEPROM
-float daySetPoint = 19;                     //      ---------------------- toEEPROM
-float nightSetPoint = 23;                   //        ---------------------- toEEPROM
+float manualModeSetPoint;               //            ---------------------- toEEPROM
+float daySetPoint;                     //      ---------------------- toEEPROM
+float nightSetPoint;                   //        ---------------------- toEEPROM
+int waterSetPoint = 60;
 //Состояние обогревателя, true - включен.
 bool heaterStatus = true;
-//Нужно нагреть.
-bool needWarm;
-//Нужно охладить.
-bool needCool; 
 //Начало временной зоны 1.
-int zoneOneBegin = 9;                   //            ---------------------- toEEPROM
+int zoneOneBegin = 9;
 //Конец временной зоны 1.
-int zoneOneEnd = 20;                     //            ---------------------- toEEPROM
+int zoneOneEnd = 20;
 
-float deadZoneValue = 0.2;
-float oneSideDeadZoneValue = deadZoneValue/2;
+float insideTempDeadZone = 0.2;
+float insideTempOneSideDeadZone = insideTempDeadZone/2;
+int waterTempDeadZone = 4;
+int waterTempOneSideDeadZone = waterTempDeadZone/2;
 
 ///////Переменные для переключения режимов отопления.
 //Номер режима.
-int modeNumber = 1;                          // ---------------------- toEEPROM
+int modeNumber;                          // ---------------------- toEEPROM
 //Количество режимов всего.
 const int totalModeNumber = 3;
 
@@ -89,9 +89,12 @@ int editableSetPoint = 1;
 int setPointCount = 3;
 
 //Режим уличного фонаря.
-int outsideLampMode = 1;                           // ---------------------- toEEPROM
+int outsideLampMode;                           // ---------------------- toEEPROM
 bool outsideLampState;
 unsigned long currentOutsideLampInterval;
+
+//Адрес ячейки памяти в EEPROM.
+int address = 0;
 
 void setup()
 {
@@ -140,6 +143,18 @@ void setup()
   //Buttons setup.
   upButton.attachClick(editableSetPointPrev);
   downButton.attachClick(editableSetPointNext);
+
+  //Получаем из EEPROM уставки и режимы, которые были туда записаны до перезагрузки.
+  EEPROM.get(address, manualModeSetPoint); 
+  address += sizeof(float);
+  EEPROM.get(address, daySetPoint);
+  address += sizeof(float);
+  EEPROM.get(address, nightSetPoint);
+  address += sizeof(float);
+  EEPROM.get(address, modeNumber);
+  address += sizeof(int);
+  EEPROM.get(address, outsideLampMode);
+  address = 0;
   
   //Интервал, через который ватчдог сбросит МК, если таймер ватчдога не обнулится.
   wdt_enable (WDTO_2S);
@@ -162,20 +177,24 @@ void loop()
   getTemperature(31000);
 
   getDateTime(1000);
-  
-  heaterManage();
 
-  manageOutsideLamp(1000, 166);
-    
-  printScreen(400);
+  calculateWaterSetPoint();
   
   modeSwitching();
-
+  
   manageSetPoints();
-
+  
+  heaterManage();
+  
+  manageOutsideLamp(1000, 166);
+  
+  printScreen(400);
+  
   sendDataToSerial(1000);
- 
+  
   receiveDataFromSerial();
+
+  putValuesToEeprom();
   
   wdt_reset();
   
