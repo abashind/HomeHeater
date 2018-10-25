@@ -15,6 +15,7 @@ int modeNumber;
 int loopCycleTime;
 int outsideLampMode;
 int waterSetPoint;
+int panicMode;
 
 char auth[] = "64eb1e89df674887b797183a7d3150a5";
 char ssid[] = "7SkyHome";
@@ -82,6 +83,16 @@ BLYNK_WRITE(V10)
   Serial.println();
 }
 
+BLYNK_WRITE(V11)
+{
+  panicMode = param.asInt();
+  StaticJsonBuffer<400> jsonBuffer; 
+  JsonObject& root = jsonBuffer.createObject();
+  root["panicMode"] = panicMode;
+  root.printTo(Serial);
+  Serial.println();
+}
+
 BLYNK_WRITE(V12)
 {
   outsideLampMode = param.asInt();
@@ -121,6 +132,7 @@ void sendDataToBlynkServer()
   Blynk.virtualWrite(V8, temperatureOutside);
   Blynk.virtualWrite(V9, temperatureWater);
   Blynk.virtualWrite(V10, waterSetPoint);
+  Blynk.virtualWrite(V11, panicMode);
 }
 
 void receiveJsonDataBySerial()
@@ -142,6 +154,7 @@ void receiveJsonDataBySerial()
     daySetPoint = root["daySetPoint"];
     nightSetPoint = root["nightSetPoint"];
     outsideLampMode = root["outLampMode"];
-    waterSetPoint = root["waterSetPoint"] ;
+    waterSetPoint = root["waterSetPoint"];
+    panicMode = root["panicMode"];
   }
 }

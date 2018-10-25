@@ -187,6 +187,7 @@ void sendDataToSerial(int waitTime)
     root["modeNumber"] = modeNumber;
     root["outLampMode"] = outsideLampMode;
     root["waterSetPoint"] = waterSetPoint;
+    root["panicMode"] = panicMode;
     root.printTo(Serial);
     Serial.println();
     previousTimeSendDataToSerial = millis();
@@ -213,6 +214,8 @@ void receiveDataFromSerial()
       outsideLampMode = root["outLampMode"];
     if(root.containsKey("waterSetPoint"))
       waterSetPoint = root["waterSetPoint"];
+    if(root.containsKey("panicMode"))
+      panicMode = root["panicMode"];
   }
 }
 
@@ -228,37 +231,24 @@ void editableSetPointNext()
     editableSetPoint++;
 }
 
-void manageOutsideLamp(int blynkInterval, int strobeInterval)
+void manageOutsideLamp()
 {
-  switch(outsideLampMode)
-  {
+    //Если паника, то управление идёт из функции managePanic.
+    if(panicMode != 1) return;
     //Уличный фонарь выключен.
-    case 1:
+    if(outsideLampMode == 1)
     {
       digitalWrite(OUTSIDE_LAMP_PIN, LOW);
       outsideLampState = false;
-      break;
+      return;
     }
     //Уличный фонарь включен.
-    case 2:
+    if(outsideLampMode == 2)
     {
       digitalWrite(OUTSIDE_LAMP_PIN, HIGH);
       outsideLampState = true;
-      break;
+      return;
     }
-    //Уличный фонарь мигает.
-    case 3:
-    {
-      outsideLampBlynk(blynkInterval);
-      break;
-    }
-    //Уличный фонарь часто мигает.
-    case 4:
-    {
-      outsideLampBlynk(strobeInterval);
-      break;
-    }
-  }
 }
 
 void calculateWaterSetPoint()
@@ -285,5 +275,33 @@ void putValuesToEeprom()
   EEPROM.put(address, modeNumber);
   address += sizeof(int);
   EEPROM.put(address, outsideLampMode);
+  address += sizeof(int);
+  EEPROM.put(address, panicMode);
   address = 0;
+}
+
+void managePanic()
+{
+  if(panicMode == 1)
+  {
+    digitalWrite(SIREN_PIN, HIGH);
+    sirenState = false; 
+  }
+  if(panicMode == 2)
+  {
+    outsideLampBlynk(1000);
+    digitalWrite(SIREN_PIN, HIGH);
+    sirenState = false; 
+  }
+  if(panicMode == 3)
+  {
+    outsideLampBlynk(166);
+    sirenBeeper(900,100);
+  }
+  if(panicMode == 4)
+  {
+    outsideLampBlynk(166);
+    digitalWrite(SIREN_PIN, LOW);
+    sirenState = true; 
+  }  
 }

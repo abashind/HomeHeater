@@ -31,3 +31,20 @@ void outsideLampBlynk(int interval)
     currentOutsideLampInterval = millis();
   }
 }
+
+void sirenBeeper(int silentInterval, int beepInterval)
+{
+  if ((millis() - currentSilentInterval) >= silentInterval)
+  {
+     digitalWrite(SIREN_PIN, LOW);
+     sirenState = true;
+
+     beepIntervalBegin = millis();
+     currentSilentInterval =  millis();
+  }
+  if((millis() - beepIntervalBegin) >= beepInterval)
+  {
+    digitalWrite(SIREN_PIN, HIGH);
+    sirenState = false;
+  }
+}

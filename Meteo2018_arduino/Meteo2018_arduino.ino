@@ -16,6 +16,7 @@
 #define DOWN_PIN 5
 #define TEMP_WATER 6
 #define OUTSIDE_LAMP_PIN 7
+#define SIREN_PIN 8
 #define CLK 9
 #define DT 10
 #define SW 11
@@ -52,9 +53,9 @@ Time t;
 unsigned long previousTimeDataTimeRead;
 
 //Уставки температуры в градусах Цельсия.
-float manualModeSetPoint;               //            ---------------------- toEEPROM
-float daySetPoint;                     //      ---------------------- toEEPROM
-float nightSetPoint;                   //        ---------------------- toEEPROM
+float manualModeSetPoint;               
+float daySetPoint;                     
+float nightSetPoint;                   
 int waterSetPoint = 60;
 //Состояние обогревателя, true - включен.
 bool heaterStatus = true;
@@ -70,7 +71,7 @@ int waterTempOneSideDeadZone = waterTempDeadZone/2;
 
 ///////Переменные для переключения режимов отопления.
 //Номер режима.
-int modeNumber;                          // ---------------------- toEEPROM
+int modeNumber;                          
 //Количество режимов всего.
 const int totalModeNumber = 3;
 
@@ -89,9 +90,15 @@ int editableSetPoint = 1;
 int setPointCount = 3;
 
 //Режим уличного фонаря.
-int outsideLampMode;                           // ---------------------- toEEPROM
+int outsideLampMode;                           
 bool outsideLampState;
 unsigned long currentOutsideLampInterval;
+
+//Режимы тревоги.
+int panicMode;
+bool sirenState = false;
+unsigned long currentSilentInterval;
+unsigned long beepIntervalBegin;
 
 //Адрес ячейки памяти в EEPROM.
 int address = 0;
@@ -129,6 +136,7 @@ void setup()
   previousTimeTemperatureRequest = 0;
   pinMode(HEATER_PIN, OUTPUT);
   pinMode(OUTSIDE_LAMP_PIN, OUTPUT);
+  pinMode(SIREN_PIN, OUTPUT);
   pinMode(UP_PIN, INPUT_PULLUP);
   pinMode(DOWN_PIN, INPUT_PULLUP);
 
@@ -154,6 +162,8 @@ void setup()
   EEPROM.get(address, modeNumber);
   address += sizeof(int);
   EEPROM.get(address, outsideLampMode);
+  address += sizeof(int);
+  EEPROM.get(address, panicMode);
   address = 0;
   
   //Интервал, через который ватчдог сбросит МК, если таймер ватчдога не обнулится.
@@ -186,7 +196,9 @@ void loop()
   
   heaterManage();
   
-  manageOutsideLamp(1000, 166);
+  manageOutsideLamp();
+
+  managePanic();
   
   printScreen(400);
   
